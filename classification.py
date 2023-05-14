@@ -10,7 +10,7 @@ import torch.nn.functional as F
 
 warnings.filterwarnings('ignore')
 
-classes = ['cardboard', 'glass', 'metal', 'paper', 'plastic']
+classes = ['glass', 'metal', 'organic', 'paper', 'plastic']
 def build_model():
     model = efficientnet_b0(EfficientNet_B0_Weights)
     in_features = model.classifier[-1].in_features
