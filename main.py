@@ -32,9 +32,9 @@ preprocess = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
-st.set_page_config('EcoAI Waste Classifier', ':recycle:')
-st.title('EcoAI Waste Classifier :recycle:')
-img_file = st.camera_input('Classifying into one of these categories: cardboard, glass, metal, paper, plastic')
+st.set_page_config('WasteWizard Classifier', ':recycle:')
+st.title('WasteWizard Classifier :recycle:')
+img_file = st.camera_input('Classifying into one of these categories: glass, metal, organic, paper, plastic')
 
 if img_file:
     img = Image.open(img_file)
@@ -55,7 +55,7 @@ if img_file:
                     label = classes[idx]
                     conf = round(probs[0][idx].item(), 2)
 
-                    if conf > 0.6:
+                    if conf > 0.5:
                         text = f'{label}, Confidence: {conf*100} %'
                         st.image(cropped_img, text)
                     else:
