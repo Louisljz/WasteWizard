@@ -7,6 +7,7 @@ import torch.nn as nn
 from torchvision import transforms
 from torchvision.models import efficientnet_b0, EfficientNet_B0_Weights
 import torch.nn.functional as F
+from ultralytics import YOLO
 
 warnings.filterwarnings('ignore')
 
@@ -18,6 +19,8 @@ def build_model():
     return model
 
 folder_path = os.path.dirname(__file__)
+detector_path = os.path.join(folder_path, 'yolov8n.pt')
+detector = YOLO(detector_path)
 classifier = build_model()
 classifier_path = os.path.join(folder_path, 'classifier.pth')
 classifier.load_state_dict(torch.load(classifier_path, map_location=torch.device('cpu')))
@@ -35,13 +38,27 @@ img_file = st.camera_input('Classifying into one of these categories: cardboard,
 
 if img_file:
     img = Image.open(img_file)
-    input = preprocess(img).unsqueeze(0)
+    results = detector.predict(img, verbose=False)
+    for r in results:    
+        boxes = r.boxes
+        if boxes:
+            for box in boxes:
+                b = box.xyxy[0]
+                cropped_img = img.crop(b.tolist())
+                input = preprocess(cropped_img).unsqueeze(0)
 
-    with torch.no_grad():
-        output = classifier(input)
-        probs = F.softmax(output, dim=1)
-        _, pred = torch.max(probs, dim=1)
-        idx = pred.item()
-        label = classes[idx]
-        conf = round(probs[0][idx].item(), 2)
-        st.info(f'{label}, Confidence: {conf*100} %')
+                with torch.no_grad():
+                    output = classifier(input)
+                    probs = F.softmax(output, dim=1)
+                    _, pred = torch.max(probs, dim=1)
+                    idx = pred.item()
+                    label = classes[idx]
+                    conf = round(probs[0][idx].item(), 2)
+
+                    if conf > 0.6:
+                        text = f'{label}, Confidence: {conf*100} %'
+                        st.image(cropped_img, text)
+                    else:
+                        st.error('AI cannot classify trash. Mark as Others.')
+        else:
+            st.error('AI cannot detect any object')    
